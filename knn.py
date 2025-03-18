@@ -57,8 +57,45 @@ r2 = r2_score(y_test, y_pred_1)
 
 print("Modelo 1 (k=√n)")
 print(f"K = {k_1}")
-print(f"RMSE = {round(rmse)}")
-print(f"R² = {round(r2)}")
+print(f"RMSE = {round(rmse, 2)}")
 
+print("-----------------")
 
-#MODELO 2: validación cruzada
+#MODELO 2: validación cruzada con raiz
+val_cruzada_raiz = Pipeline([
+    ('preprocessing', preprocessor),
+    ('knn', KNeighborsRegressor(n_neighbors=k_1))
+])
+# -a
+val_cruz_scores = cross_val_score(val_cruzada_raiz, X, y, cv = 5, scoring='neg_mean_squared_error')
+
+rmse_val_cruz = np.sqrt(-val_cruz_scores.mean())
+print("Modelo 2 (k=√n, validacion cruzada)")
+print(f"K = {k_1}")
+print(f"RMSE = {round(rmse_val_cruz, 2)}")
+
+print("-----------------")
+#MODELO 3: Tuneado
+
+modelo3_preprocessor = Pipeline([
+    ('preprocessing', preprocessor),
+    ('knn', KNeighborsRegressor())
+])
+
+pram_tune = {
+    'knn__n_neighbors': [3, 5, 7, 9, 11],
+    'knn__weights': ['uniform', 'distance'],
+    'knn__p': [1, 2]
+}
+
+grid_search = GridSearchCV(modelo3_preprocessor, pram_tune, cv = 5, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search.fit(X_train, y_train)
+tuned_knn = grid_search.best_estimator_
+
+y_pred_2 = tuned_knn.predict(X_test)
+rmse_tuned = root_mean_squared_error(y_test, y_pred_2)
+r2_tuned = r2_score(y_test, y_pred_2)
+
+print("Modelo 3 (k tuneado)")
+print(f"Mejor KNN:  {grid_search.best_params_}")
+print(f"RMSE = {round(rmse_val_cruz, 2)}")
